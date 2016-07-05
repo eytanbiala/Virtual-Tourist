@@ -26,15 +26,33 @@ class Photo: NSManagedObject {
     }
 
     class func addPhoto(pin: Pin, url: String, context: NSManagedObjectContext) -> Photo {
-        let photo = Photo(entity: self.entity(context)!, insertIntoManagedObjectContext: context)
-        photo.pin = pin
-        photo.url = url
-        context.insertObject(photo)
-        return photo
+        var photo = existingPhoto(pin, url: url, context: context)
+        if photo == nil {
+            photo = Photo(entity: self.entity(context)!, insertIntoManagedObjectContext: context)
+        }
+
+        photo!.pin = pin
+        photo!.url = url
+        context.insertObject(photo!)
+        return photo!
+    }
+
+    class func existingPhoto(pin: Pin, url: String, context: NSManagedObjectContext) -> Photo? {
+        let fr = NSFetchRequest(entityName: "Photo")
+        fr.predicate = NSPredicate(format: "url == %@ AND pin == %@", url, pin)
+
+        var photos = [Photo]()
+        do {
+            photos = try context.executeFetchRequest(fr) as! [Photo]
+        } catch let error as NSError {
+            print("Fetch failed: \(error.localizedDescription)")
+        }
+
+        return photos.first
     }
 
     class func updateImage(url: String, imageData: NSData, context: NSManagedObjectContext) -> Photo? {
-        let fr = NSFetchRequest(entityName: "Pin")
+        let fr = NSFetchRequest(entityName: "Photo")
         fr.predicate = NSPredicate(format: "url == %@", url)
 
         var photos = [Photo]()
@@ -49,6 +67,24 @@ class Photo: NSManagedObject {
         }
 
         return nil
+    }
+
+    class func deleteAll(pin: Pin, context: NSManagedObjectContext) {
+        let fr = NSFetchRequest(entityName: "Photo")
+        fr.predicate = NSPredicate(format: "pin == %@", pin)
+
+
+        var photos = [Photo]()
+        do {
+            photos = try context.executeFetchRequest(fr) as! [Photo]
+        } catch let error as NSError {
+            print("Fetch failed: \(error.localizedDescription)")
+        }
+
+
+        for photo in photos {
+            context.deleteObject(photo)
+        }
     }
 
 }

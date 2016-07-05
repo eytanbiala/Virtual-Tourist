@@ -29,7 +29,8 @@ class ViewController: UIViewController, MKMapViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+
+        title = "Virtual Tourist"
 
         map.frame = self.view.bounds
         map.delegate = self
@@ -39,6 +40,14 @@ class ViewController: UIViewController, MKMapViewDelegate {
         map.addGestureRecognizer(longPress)
 
         view.addSubview(map)
+
+        if let context = CoreDataStack.sharedInstance?.context {
+            let pins = Pin.getAllPins(context)
+            for pin in pins {
+                let annotation = Annotation(title: "\(pin.latitude), \(pin.longitude)", coordinate: CLLocationCoordinate2DMake(pin.latitude, pin.longitude))
+                map.addAnnotation(annotation)
+            }
+        }
 
         navigationController?.navigationBarHidden = true
     }
@@ -52,14 +61,6 @@ class ViewController: UIViewController, MKMapViewDelegate {
 
         if let center = NSUserDefaults.standardUserDefaults().objectForKey("savedMapZoom") as? CLLocationCoordinate2D {
             map.camera.centerCoordinate = center
-        }
-
-        if let context = CoreDataStack.sharedInstance?.context {
-            let pins = Pin.getAllPins(context)
-            for pin in pins {
-                let annotation = Annotation(title: "\(pin.latitude), \(pin.longitude)", coordinate: CLLocationCoordinate2DMake(pin.latitude, pin.longitude))
-                map.addAnnotation(annotation)
-            }
         }
     }
 
@@ -77,7 +78,7 @@ class ViewController: UIViewController, MKMapViewDelegate {
         }
 
 
-        let annotation = Annotation(title: "Test: \(coordinate.latitude)", coordinate: coordinate)
+        let annotation = Annotation(title: "\(coordinate.latitude), \(coordinate.longitude)", coordinate: coordinate)
         map.addAnnotation(annotation)
     }
 

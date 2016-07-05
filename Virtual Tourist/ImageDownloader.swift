@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-typealias ImageLoadCompletion = (url: NSURL, image: UIImage?, error: NSError?) -> (Void)
+typealias ImageLoadCompletion = (url: NSURL, imageData: NSData?, error: NSError?) -> (Void)
 
 class ImageLoadOperation : NSOperation {
 
@@ -33,20 +33,20 @@ class ImageLoadOperation : NSOperation {
         let task = session.dataTaskWithRequest(request) { data, response, error in
             guard error == nil && data != nil else {
                 dispatch_async(dispatch_get_main_queue(), {
-                    self.imageLoadCompletion?(url: self.imageURL, image: nil, error: error)
+                    self.imageLoadCompletion?(url: self.imageURL, imageData: nil, error: error)
                 })
                 return
             }
 
-            if let image = UIImage(data: data!) {
+//            if let image = UIImage(data: data!) {
                 dispatch_async(dispatch_get_main_queue(), {
-                    self.imageLoadCompletion?(url: self.imageURL, image: image, error: nil)
+                    self.imageLoadCompletion?(url: self.imageURL, imageData: data, error: nil)
                 })
-            } else {
-                dispatch_async(dispatch_get_main_queue(), {
-                    self.imageLoadCompletion?(url: self.imageURL, image: nil, error: nil)
-                })
-            }
+//            } else {
+//                dispatch_async(dispatch_get_main_queue(), {
+//                    self.imageLoadCompletion?(url: self.imageURL, imageData: nil, error: nil)
+//                })
+//            }
         }
         task.resume()
     }
@@ -56,13 +56,13 @@ class ImageLoader {
 
     private lazy var queue: NSOperationQueue = {
         let queue = NSOperationQueue()
-        queue.maxConcurrentOperationCount = 25
+        queue.maxConcurrentOperationCount = 30
         queue.name = "ImageLoader"
         queue.qualityOfService = .Utility
         return queue
     }()
 
-    let sharedInstance = ImageLoader()
+    static let sharedInstance = ImageLoader()
 
     func loadImage(imageURL: String, completion: ImageLoadCompletion) {
 

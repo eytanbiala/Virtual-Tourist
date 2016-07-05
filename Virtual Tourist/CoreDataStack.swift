@@ -131,6 +131,24 @@ extension CoreDataStack{
             }
         }
     }
+
+    func performBackgroundBatchOperation(batch: BatchTask, completion: () -> Void){
+
+        backgroundContext.performBlock(){
+            batch(workerContext: self.backgroundContext)
+
+            // Save it to the parent context, so normal saving can work
+            do {
+                try self.backgroundContext.save()
+            } catch{
+                fatalError("Error while saving backgroundContext: \(error)")
+            }
+
+            dispatch_async(dispatch_get_main_queue(), { 
+                completion()
+            })
+        }
+    }
 }
 
 // MARK:  - Heavy processing in the background.

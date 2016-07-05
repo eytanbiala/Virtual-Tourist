@@ -11,21 +11,25 @@ import UIKit
 
 typealias FlickrClientResult = (error: NSError?, result: Dictionary<String, AnyObject>?) -> (Void)
 
+let key = "9ab025685e5b8d9600042448a22e4f0c"
+
 struct FlickrPhoto {
     // https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}_[mstzb].jpg
 
     let farm: String
     let server: String
     let photoId: String
+    let secret: String
 
     init(dictionary: Dictionary<String, AnyObject>) {
         farm = (dictionary["farm"] as! NSNumber).stringValue
         server = dictionary["server"] as! String
         photoId = dictionary["id"] as! String
+        secret = dictionary["secret"] as! String
     }
 
     func url() -> String {
-        return "https://farm\(farm).staticflickr.com/\(server)/\(photoId)_\(secret)_m.jpg"
+        return "https://farm\(farm).staticflickr.com/\(server)/\(photoId)_\(secret)_q.jpg"
     }
 }
 
