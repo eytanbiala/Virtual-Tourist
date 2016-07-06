@@ -9,11 +9,14 @@
 import Foundation
 import CoreData
 
-
 class Pin: NSManagedObject {
 
     class func entity(context: NSManagedObjectContext) -> NSEntityDescription? {
         return NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)
+    }
+
+    class func fetchRequest() -> NSFetchRequest {
+        return NSFetchRequest(entityName: "Pin")
     }
 
     class func addPin(latitude: Double, longitude: Double, context: NSManagedObjectContext) -> Pin {
@@ -26,7 +29,7 @@ class Pin: NSManagedObject {
 
     class func getPin(latitude: Double, longitude: Double, context: NSManagedObjectContext) -> Pin? {
 
-        let fetch = NSFetchRequest(entityName: "Pin")
+        let fetch = fetchRequest()
         fetch.predicate = NSPredicate(format: "latitude = %@ AND longitude = %@", argumentArray: [latitude, longitude])
 
         var pins = [Pin]()
@@ -41,7 +44,7 @@ class Pin: NSManagedObject {
 
     class func getAllPins(context: NSManagedObjectContext) -> [Pin] {
 
-        let fetch = NSFetchRequest(entityName: "Pin")
+        let fetch = fetchRequest()
 
         var pins = [Pin]()
         do {

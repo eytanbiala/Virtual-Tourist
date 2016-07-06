@@ -31,6 +31,7 @@ class ImageLoadOperation : NSOperation {
         let request = NSURLRequest(URL:  imageURL)
         let session = NSURLSession.sharedSession()
         let task = session.dataTaskWithRequest(request) { data, response, error in
+
             guard error == nil && data != nil else {
                 dispatch_async(dispatch_get_main_queue(), {
                     self.imageLoadCompletion?(url: self.imageURL, imageData: nil, error: error)
@@ -38,15 +39,9 @@ class ImageLoadOperation : NSOperation {
                 return
             }
 
-//            if let image = UIImage(data: data!) {
-                dispatch_async(dispatch_get_main_queue(), {
-                    self.imageLoadCompletion?(url: self.imageURL, imageData: data, error: nil)
-                })
-//            } else {
-//                dispatch_async(dispatch_get_main_queue(), {
-//                    self.imageLoadCompletion?(url: self.imageURL, imageData: nil, error: nil)
-//                })
-//            }
+            dispatch_async(dispatch_get_main_queue(), {
+                self.imageLoadCompletion?(url: self.imageURL, imageData: data, error: nil)
+            })
         }
         task.resume()
     }
@@ -56,7 +51,7 @@ class ImageLoader {
 
     private lazy var queue: NSOperationQueue = {
         let queue = NSOperationQueue()
-        queue.maxConcurrentOperationCount = 30
+        queue.maxConcurrentOperationCount = 10
         queue.name = "ImageLoader"
         queue.qualityOfService = .Utility
         return queue

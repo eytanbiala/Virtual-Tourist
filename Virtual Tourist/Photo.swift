@@ -8,18 +8,19 @@
 
 import Foundation
 import CoreData
-import UIKit
 
 class Photo: NSManagedObject {
-
-// Insert code here to add functionality to your managed object subclass
 
     class func entity(context: NSManagedObjectContext) -> NSEntityDescription? {
         return NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)
     }
 
+    class func fetchRequest() -> NSFetchRequest {
+        return NSFetchRequest(entityName: "Photo")
+    }
+
     class func fetchedResultsController(pin: Pin, context: NSManagedObjectContext) -> NSFetchedResultsController {
-        let fr = NSFetchRequest(entityName: "Photo")
+        let fr = fetchRequest()
         fr.predicate = NSPredicate(format: "pin == %@", pin)
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: "\(pin.latitude),\(pin.longitude)")
         return frc
@@ -38,7 +39,7 @@ class Photo: NSManagedObject {
     }
 
     class func existingPhoto(pin: Pin, url: String, context: NSManagedObjectContext) -> Photo? {
-        let fr = NSFetchRequest(entityName: "Photo")
+        let fr = fetchRequest()
         fr.predicate = NSPredicate(format: "url == %@ AND pin == %@", url, pin)
 
         var photos = [Photo]()
@@ -52,7 +53,7 @@ class Photo: NSManagedObject {
     }
 
     class func updateImage(url: String, imageData: NSData, context: NSManagedObjectContext) -> Photo? {
-        let fr = NSFetchRequest(entityName: "Photo")
+        let fr = fetchRequest()
         fr.predicate = NSPredicate(format: "url == %@", url)
 
         var photos = [Photo]()
@@ -70,7 +71,7 @@ class Photo: NSManagedObject {
     }
 
     class func deleteAll(pin: Pin, context: NSManagedObjectContext) {
-        let fr = NSFetchRequest(entityName: "Photo")
+        let fr = fetchRequest()
         fr.predicate = NSPredicate(format: "pin == %@", pin)
 
 
@@ -86,5 +87,4 @@ class Photo: NSManagedObject {
             context.deleteObject(photo)
         }
     }
-
 }

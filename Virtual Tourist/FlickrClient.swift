@@ -62,7 +62,6 @@ class FlickrClient {
                 return
             }
 
-            /* subset response data! */
             let json = jsonFromResponseData(data!)
             //print(json)
             dispatch_async(dispatch_get_main_queue(), {

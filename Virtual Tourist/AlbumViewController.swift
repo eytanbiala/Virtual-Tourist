@@ -309,11 +309,10 @@ class AlbumCollectionView: UICollectionView, UICollectionViewDelegate, UICollect
                 cell.contentView.addSubview(imageView)
             } else {
                 cell.contentView.backgroundColor = UIColor.lightGrayColor()
-                //                let loader = UIActivityIndicatorView(frame: CGRect(origin: CGPointZero, size: CGSize(width: 44.0, height: 44.0)))
-                //                loader.activityIndicatorViewStyle = .Gray
-                //                loader.center = CGPoint(x: cell.contentView.bounds.size.width / 2 - 22, y: cell.contentView.bounds.size.height / 2 - 22)
-                //                loader.startAnimating()
-                //                cell.contentView.addSubview(loader)
+                let loader = UIActivityIndicatorView(frame: CGRect(origin: CGPointZero, size: CGSize(width: 44.0, height: 44.0)))
+                loader.center = cell.contentView.center
+                loader.startAnimating()
+                cell.contentView.addSubview(loader)
             }
         }
 

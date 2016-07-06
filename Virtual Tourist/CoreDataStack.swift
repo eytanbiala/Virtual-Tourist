@@ -213,7 +213,7 @@ extension CoreDataStack {
                 self.persistingContext.performBlock(){
                     do{
                         try self.persistingContext.save()
-                    }catch{
+                    } catch{
                         fatalError("Error while saving persisting context: \(error)")
                     }
                 }
