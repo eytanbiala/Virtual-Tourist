@@ -74,14 +74,12 @@ class Photo: NSManagedObject {
         let fr = fetchRequest()
         fr.predicate = NSPredicate(format: "pin == %@", pin)
 
-
         var photos = [Photo]()
         do {
             photos = try context.executeFetchRequest(fr) as! [Photo]
         } catch let error as NSError {
             print("Fetch failed: \(error.localizedDescription)")
         }
-
 
         for photo in photos {
             context.deleteObject(photo)

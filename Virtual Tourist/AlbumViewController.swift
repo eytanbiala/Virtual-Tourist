@@ -23,6 +23,9 @@ class AlbumViewController: UIViewController {
 
     var albumView: AlbumCollectionView?
 
+    var flickrPage: Int = 1
+
+
     lazy var downloadedURLs: Set<String> = {
         return Set<String>()
     }()
@@ -65,11 +68,12 @@ class AlbumViewController: UIViewController {
         map?.addAnnotation(annotation)
 
         let layout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: 64, height: 64)
+        layout.itemSize = CGSize(width: 90, height: 90)
         layout.minimumLineSpacing = 1.0
         layout.minimumInteritemSpacing = 1.0
         let frame = CGRect(origin: CGPoint(x: 0, y: mapHeight), size: CGSize(width: view.bounds.size.width, height: collectionViewHeight))
         albumView = AlbumCollectionView(frame: frame, collectionViewLayout: layout)
+        albumView?.contentInset = UIEdgeInsets(top: 1, left: 2, bottom: 2, right: 2)
         albumView!.pin = pin
         albumView!.coordinate = coordinate
 
@@ -94,7 +98,10 @@ class AlbumViewController: UIViewController {
         albumView?.pin = pin
 
         if let lat = coordinate?.latitude, long = coordinate?.longitude {
-            FlickrClient.photosSearch(lat, longitude: long, completion: { (error, result) -> (Void) in
+
+            self.albumView?.setLoading(true)
+
+            FlickrClient.photosSearch(lat, longitude: long, page:  flickrPage, completion: { (error, result) -> (Void) in
                 guard error == nil && result != nil else {
 
                     let albumFrame = self.albumView?.frame
@@ -107,45 +114,45 @@ class AlbumViewController: UIViewController {
                     return
                 }
 
+
+
                 guard let photos = result!["photos"] as? [String: AnyObject],
-                    let photoList = photos["photo"] as? [[String: AnyObject]]
+                    let photoList = photos["photo"] as? [[String: AnyObject]],
+                    let pages = photos["pages"] as? Int
                     else {
                         return
                 }
 
-                if let pinIn = self.pin {
+                self.flickrPage += 1
 
-                    CoreDataStack.sharedInstance?.performBackgroundBatchOperation({ (workerContext) in
+                if let pinIn = self.pin, ctx = CoreDataStack.sharedInstance?.context {
 
-                        do {
-                            let photoPin = try workerContext.existingObjectWithID(pinIn.objectID) as! Pin
+                    for photo in photoList {
+                        let flickr = FlickrPhoto(dictionary: photo)
 
-                            for photo in photoList {
-                                let flickr = FlickrPhoto(dictionary: photo)
+                        Photo.addPhoto(pinIn, url: flickr.url(), context: ctx)
 
-                                Photo.addPhoto(photoPin, url: flickr.url(), context: workerContext)
+                        ImageLoader.sharedInstance.loadImage(flickr.url(), completion: { (url, image, error) -> (Void) in
 
-                                ImageLoader.sharedInstance.loadImage(flickr.url(), completion: { (url, image, error) -> (Void) in
+                            if let ctx2 = CoreDataStack.sharedInstance?.context {
+                                if let data = image {
+                                    Photo.updateImage(url.absoluteString, imageData: data, context: ctx2)
+                                }
+                                self.downloadedURLs.insert(url.absoluteString)
 
-                                    CoreDataStack.sharedInstance?.performBackgroundBatchOperation({ (workerContext2) in
-                                        if let data = image {
-                                            Photo.updateImage(url.absoluteString, imageData: data, context: workerContext2)
-                                        }
-                                        self.downloadedURLs.insert(url.absoluteString)
+                                if self.downloadedURLs.count == photoList.count{
 
-                                        if self.downloadedURLs.count == photoList.count {
-                                            dispatch_async(dispatch_get_main_queue(), {
-                                                self.newCollectionButton.enabled = true
-                                            })
-                                        }
-                                    })
-                                });
+                                    self.albumView?.setLoading(false)
+
+                                    if self.flickrPage <= pages {
+                                        dispatch_async(dispatch_get_main_queue(), {
+                                            self.newCollectionButton.enabled = true
+                                        })
+                                    }
+                                }
                             }
-                        } catch {
-                            
-                        }
-                        
-                    })
+                        });
+                    }
                 }
             })
         }
@@ -187,6 +194,8 @@ class AlbumCollectionView: UICollectionView, UICollectionViewDelegate, UICollect
                         print(fetchError)
                     }
                 }
+            } else {
+                fetchedResultsController = nil
             }
         }
     }
@@ -200,6 +209,21 @@ class AlbumCollectionView: UICollectionView, UICollectionViewDelegate, UICollect
     lazy var sectionChanges : [ChangeBlock] = {
         return [ChangeBlock]()
     }()
+
+    lazy var emptyView : UILabel = {
+        let label = UILabel()
+        label.text = "No photos"
+        label.textAlignment = .Center
+        return label
+    }()
+
+    func setLoading(loading: Bool) {
+        if loading {
+            emptyView.text = "Loading"
+        } else {
+            emptyView.text = "No photos"
+        }
+    }
 
     convenience init() {
         self.init(frame: CGRectZero, collectionViewLayout: UICollectionViewLayout())
@@ -285,6 +309,12 @@ class AlbumCollectionView: UICollectionView, UICollectionViewDelegate, UICollect
 
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if let count = fetchedResultsController?.fetchedObjects?.count {
+            if (count == 0) {
+                collectionView.backgroundView = emptyView
+                emptyView.frame = collectionView.bounds
+            } else {
+                collectionView.backgroundView = nil
+            }
             return count
         }
         return 0
@@ -320,10 +350,10 @@ class AlbumCollectionView: UICollectionView, UICollectionViewDelegate, UICollect
     }
 
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        if let ctx = CoreDataStack.sharedInstance?.context, obj = fetchedResultsController?.objectAtIndexPath(indexPath) as? NSManagedObject {
-            ctx.deleteObject(obj)
+        if let ctx = CoreDataStack.sharedInstance?.context, photo = fetchedResultsController?.objectAtIndexPath(indexPath) as? Photo {
+            ctx.deleteObject(photo)
             CoreDataStack.sharedInstance?.save()
         }
     }
-    
+
 }

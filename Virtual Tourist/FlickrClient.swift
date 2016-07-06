@@ -71,8 +71,8 @@ class FlickrClient {
         task.resume()
     }
 
-    class func photosSearch(latitude: Double, longitude: Double, completion: FlickrClientResult) {
-        let url = NSURL(string:"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(key)&media=photos&format=json&nojsoncallback=1&lat=\(latitude)&lon=\(longitude)")
+    class func photosSearch(latitude: Double, longitude: Double, page: Int, completion: FlickrClientResult) {
+        let url = NSURL(string:"https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(key)&media=photos&format=json&nojsoncallback=1&lat=\(latitude)&lon=\(longitude)&per_page=20&page=\(page)")
         let request = NSURLRequest(URL: url!)
         flickrDataTaskWithCompletion(request, completion: completion)
     }

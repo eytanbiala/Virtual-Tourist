@@ -79,6 +79,8 @@ class CoreDataStack {
 
         self.dbURL = docUrl.URLByAppendingPathComponent("model.sqlite")
 
+        print("Documents dir: \(docUrl)")
+
         do {
             try addStoreTo(coordinator: coordinator,
                            storeType: NSSQLiteStoreType,
@@ -98,7 +100,8 @@ class CoreDataStack {
                                 storeURL: NSURL,
                                 options : [NSObject : AnyObject]?) throws{
 
-        try coord.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: dbURL, options: nil)
+        let options: [NSObject : AnyObject] = [NSSQLitePragmasOption: ["journal_mode": "DELETE"]]
+        try coord.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: dbURL, options: options)
     }
 }
 
@@ -116,21 +119,7 @@ extension CoreDataStack  {
 }
 
 // MARK:  - Batch processing in the background
-extension CoreDataStack{
-
-    func performBackgroundBatchOperation(batch: BatchTask){
-
-        backgroundContext.performBlock(){
-            batch(workerContext: self.backgroundContext)
-
-            // Save it to the parent context, so normal saving can work
-            do {
-                try self.backgroundContext.save()
-            } catch{
-                fatalError("Error while saving backgroundContext: \(error)")
-            }
-        }
-    }
+extension CoreDataStack {
 
     func performBackgroundBatchOperation(batch: BatchTask, completion: () -> Void){
 
@@ -150,46 +139,6 @@ extension CoreDataStack{
         }
     }
 }
-
-// MARK:  - Heavy processing in the background.
-// Use this if importing a gazillion objects.
-extension CoreDataStack {
-
-    func performBackgroundImportingBatchOperation(batch: BatchTask) {
-
-        // Create temp coordinator
-        let tmpCoord = NSPersistentStoreCoordinator(managedObjectModel: self.model)
-
-
-        do{
-            try addStoreTo(coordinator: tmpCoord, storeType: NSSQLiteStoreType, configuration: nil, storeURL: dbURL, options: nil)
-        }catch{
-            fatalError("Error adding a SQLite Store: \(error)")
-        }
-
-        // Create temp context
-        let moc = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
-        moc.name = "Importer"
-        moc.persistentStoreCoordinator = tmpCoord
-
-        // Run the batch task, save the contents of the moc & notify
-        moc.performBlock(){
-            batch(workerContext: moc)
-
-            do {
-                try moc.save()
-            }catch{
-                fatalError("Error saving importer moc: \(moc)")
-            }
-
-            let nc = NSNotificationCenter.defaultCenter()
-            let n = NSNotification(name: CoreDataStackNotifications.ImportingTaskDidFinish.rawValue,
-                object: nil)
-            nc.postNotification(n)
-        }
-    }
-}
-
 
 // MARK:  - Save
 extension CoreDataStack {
