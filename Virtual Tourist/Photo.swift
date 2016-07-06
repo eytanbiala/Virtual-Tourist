@@ -34,7 +34,6 @@ class Photo: NSManagedObject {
 
         photo!.pin = pin
         photo!.url = url
-        context.insertObject(photo!)
         return photo!
     }
 

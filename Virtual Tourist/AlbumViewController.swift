@@ -103,18 +103,8 @@ class AlbumViewController: UIViewController {
 
             FlickrClient.photosSearch(lat, longitude: long, page:  flickrPage, completion: { (error, result) -> (Void) in
                 guard error == nil && result != nil else {
-
-                    let albumFrame = self.albumView?.frame
-                    let point = CGPoint(x: (albumFrame?.size.width)! / 2 - 24, y: (albumFrame?.size.height)! / 2 - 24)
-                    let loading = UIActivityIndicatorView(frame: CGRect(origin: point, size: CGSize(width: 48, height: 48)))
-                    loading.activityIndicatorViewStyle = .Gray
-                    loading.startAnimating()
-                    self.albumView?.addSubview(loading)
-
                     return
                 }
-
-
 
                 guard let photos = result!["photos"] as? [String: AnyObject],
                     let photoList = photos["photo"] as? [[String: AnyObject]],
@@ -125,19 +115,26 @@ class AlbumViewController: UIViewController {
 
                 self.flickrPage += 1
 
+                if photoList.count == 0 {
+                    self.albumView?.setLoading(false)
+                }
+
                 if let pinIn = self.pin, ctx = CoreDataStack.sharedInstance?.context {
 
                     for photo in photoList {
                         let flickr = FlickrPhoto(dictionary: photo)
 
                         Photo.addPhoto(pinIn, url: flickr.url(), context: ctx)
+                        CoreDataStack.sharedInstance?.save()
 
                         ImageLoader.sharedInstance.loadImage(flickr.url(), completion: { (url, image, error) -> (Void) in
 
                             if let ctx2 = CoreDataStack.sharedInstance?.context {
                                 if let data = image {
                                     Photo.updateImage(url.absoluteString, imageData: data, context: ctx2)
+                                    CoreDataStack.sharedInstance?.save()
                                 }
+
                                 self.downloadedURLs.insert(url.absoluteString)
 
                                 if self.downloadedURLs.count == photoList.count{
